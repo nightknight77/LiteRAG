@@ -81,7 +81,6 @@ pre_flight_checks() {
     mkdir -p "$PROJECT_ROOT/vector-db/storage"
     mkdir -p "$PROJECT_ROOT/embedding-service/models"
     mkdir -p "$PROJECT_ROOT/data"
-    mkdir -p "$PROJECT_ROOT/config"
     
     success "Pre-flight checks completed"
 }
@@ -106,6 +105,31 @@ monitor_startup() {
     done
     
     error "$service failed to become healthy within $MAX_WAIT_TIME seconds"
+    return 1
+}
+
+# Simplified service check that just tests if port is responding
+check_service_port() {
+    local service=$1
+    local port=$2
+    local max_attempts=$((MAX_WAIT_TIME / HEALTH_CHECK_INTERVAL))
+    local attempt=0
+    
+    log "Waiting for $service on port $port..."
+    
+    while [ $attempt -lt $max_attempts ]; do
+        # Try nc first, fallback to bash TCP test
+        if nc -z localhost $port 2>/dev/null || timeout 1 bash -c "</dev/tcp/localhost/$port" 2>/dev/null; then
+            success "$service is responding on port $port"
+            return 0
+        fi
+        
+        attempt=$((attempt + 1))
+        echo -n "."
+        sleep $HEALTH_CHECK_INTERVAL
+    done
+    
+    error "$service failed to start within $MAX_WAIT_TIME seconds"
     return 1
 }
 
@@ -148,15 +172,22 @@ main() {
     # Monitor each service startup
     local services_healthy=true
     
-    if ! monitor_startup "Qdrant" "http://localhost:6333/health"; then
+    # First check if ports are responding (faster)
+    if ! check_service_port "Qdrant" "6333"; then
+        services_healthy=false
+    elif ! monitor_startup "Qdrant" "http://localhost:6333/"; then
         services_healthy=false
     fi
     
-    if ! monitor_startup "Embedding Service" "http://localhost:8001/health"; then
+    if ! check_service_port "Embedding Service" "8001"; then
+        services_healthy=false
+    elif ! monitor_startup "Embedding Service" "http://localhost:8001/health"; then
         services_healthy=false
     fi
     
-    if ! monitor_startup "RAG API" "http://localhost:8000/health"; then
+    if ! check_service_port "RAG API" "8000"; then
+        services_healthy=false
+    elif ! monitor_startup "RAG API" "http://localhost:8000/health"; then
         services_healthy=false
     fi
     

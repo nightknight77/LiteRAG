@@ -26,7 +26,7 @@ services:
     ports:
       - "8001:8000"
     environment:
-      - MODEL_NAME=all-MiniLM-L6-v2
+      - MODEL_NAME=all-mpnet-base-v2
       - BATCH_SIZE=32
       - MAX_CONCURRENT_REQUESTS=5
       - TORCH_NUM_THREADS=2
