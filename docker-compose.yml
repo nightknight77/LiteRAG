@@ -12,6 +12,14 @@ services:
       - QDRANT__SERVICE__HTTP_PORT=6333
       - QDRANT__SERVICE__GRPC_PORT=6334
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
   embedding-service:
     build: ./embedding-service
@@ -19,9 +27,20 @@ services:
       - "8001:8000"
     environment:
       - MODEL_NAME=all-MiniLM-L6-v2
+      - BATCH_SIZE=32
+      - MAX_CONCURRENT_REQUESTS=5
+      - TORCH_NUM_THREADS=2
     restart: unless-stopped
     volumes:
       - ./embedding-service/models:/app/models
+    deploy:
+      resources:
+        limits:
+          memory: 800M
+          cpus: '1.0'
+        reservations:
+          memory: 400M
+          cpus: '0.5'
 
   rag-api:
     build: ./rag-api
@@ -31,12 +50,22 @@ services:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
       - EMBEDDING_SERVICE_URL=http://embedding-service:8000
+      - MAX_CONCURRENT_REQUESTS=10
+      - REQUEST_TIMEOUT=30
     depends_on:
       - qdrant
       - embedding-service
     restart: unless-stopped
     volumes:
       - ./data:/app/data
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
 
 networks:
   default:
