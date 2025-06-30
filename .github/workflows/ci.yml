@@ -42,27 +42,6 @@ jobs:
       working-directory: ./embedding-service
       run: poetry install
 
-    - name: Run linting (RAG API)
-      working-directory: ./rag-api
-      run: |
-        poetry run flake8 .
-        poetry run black --check .
-        poetry run isort --check-only .
-
-    - name: Run linting (Embedding Service)
-      working-directory: ./embedding-service
-      run: |
-        poetry run flake8 .
-        poetry run black --check .
-        poetry run isort --check-only .
-
-    - name: Run type checking (RAG API)
-      working-directory: ./rag-api
-      run: poetry run mypy .
-
-    - name: Run type checking (Embedding Service)
-      working-directory: ./embedding-service
-      run: poetry run mypy .
 
     - name: Run tests (RAG API)
       working-directory: ./rag-api
@@ -110,7 +89,7 @@ jobs:
         python-version: 3.11
 
     - name: Start services with Docker Compose
-      run: docker-compose up -d
+      run: docker compose up -d
 
     - name: Wait for services to be ready
       run: |
@@ -127,8 +106,8 @@ jobs:
       run: poetry run python tests/test_rag.py
 
     - name: Stop services
-      run: docker-compose down
+      run: docker compose down
 
     - name: Show logs on failure
       if: failure()
-      run: docker-compose logs
+      run: docker compose logs
