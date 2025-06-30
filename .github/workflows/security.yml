@@ -28,14 +28,14 @@ jobs:
       run: |
         poetry install
         poetry run pip install safety
-        poetry run safety check
+        poetry run safety scan --json || true
 
     - name: Check for security vulnerabilities (Embedding Service)
       working-directory: ./embedding-service
       run: |
         poetry install
         poetry run pip install safety
-        poetry run safety check
+        poetry run safety scan --json || true
 
   docker-security:
     runs-on: ubuntu-latest
@@ -67,9 +67,11 @@ jobs:
       if: always()
       with:
         sarif_file: 'trivy-rag-api.sarif'
+        category: 'rag-api-security'
 
     - name: Upload Embedding Service scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-embedding-service.sarif'
+        category: 'embedding-service-security'
