@@ -42,10 +42,8 @@ install_deps() {
 
 run_tests() {
     echo -e "${GREEN}🧪 Running tests...${NC}"
-    echo "Testing RAG API..."
-    cd rag-api && poetry run pytest -v && cd ..
-    echo "Testing Embedding Service..."
-    cd embedding-service && poetry run pytest -v && cd ..
+    echo "Running integration tests from root directory..."
+    poetry run pytest tests/ -v
     echo -e "${GREEN}✅ Tests completed${NC}"
 }
 
