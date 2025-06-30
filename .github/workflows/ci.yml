@@ -117,8 +117,14 @@ jobs:
         timeout 120s bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
         timeout 120s bash -c 'until curl -f http://localhost:8001/health; do sleep 2; done'
 
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+
+    - name: Install test dependencies
+      run: poetry install
+
     - name: Run integration tests
-      run: python scripts/test_rag.py
+      run: poetry run python tests/test_rag.py
 
     - name: Stop services
       run: docker-compose down
